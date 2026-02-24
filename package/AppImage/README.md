@@ -1,5 +1,6 @@
 # Converseen AppImage🐧
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/faster3ck/Converseen/build-appimage-release.yaml)](https://github.com/Faster3ck/Converseen/releases/latest)
+
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/o9-9/Converseen/build-appimage-release.yaml)](https://github.com/o9-9/Converseen/releases/latest)
 
 **Converseen** is available as an **AppImage**, built with **[sharun](https://github.com/VHSgunzo/sharun)**, and designed to run on any Linux distribution.
 

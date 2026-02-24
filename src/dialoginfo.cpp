@@ -2,7 +2,7 @@
 * This file is part of Converseen, an open-source batch image converter
 * and resizer.
 *
-* (C) Francesco Mondello 2009 - 2026
+* (C) o9 (o9-9) 2009 - 2026
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *
-* Contact e-mail: Francesco Mondello <faster3ck@gmail.com>
+* Contact e-mail: o9 (o9-9) <o9@o9ll.com>
 *
 */
 
