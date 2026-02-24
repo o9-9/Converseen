@@ -1,328 +1,193 @@
-# Test build process on various OS and Configutations
-name: Build
+# Build Windows 11 Release with Auto Tag Bump
+name: Build Windows 11 Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
 
-env:
-  APPIMAGE_DIR: package/AppImage
-  
+permissions:
+  contents: write
+
 jobs:
-  build-appimage:
-    name: "${{ matrix.name }} (${{ matrix.arch }})"
-    runs-on: ${{ matrix.runs-on }}
+  # ─────────────────────────────────────────────
+  # 1. Resolve the NEXT version tag once, share
+  #    it with every downstream job.
+  # ─────────────────────────────────────────────
+  resolve-version:
+    name: Resolve Next Version
+    runs-on: ubuntu-latest
     outputs:
-      output_version: ${{ steps.converseen-version.outputs.version }}
-    strategy:
-      matrix:
-        include:
-          - runs-on: ubuntu-latest
-            name: Build AppImage
-            arch: x86_64
-          - runs-on: ubuntu-24.04-arm
-            name: Build AppImage
-            arch: aarch64
-    container:
-      image: ghcr.io/pkgforge-dev/archlinux:latest
+      current_tag: ${{ steps.bump.outputs.current_tag }}
+      next_tag:    ${{ steps.bump.outputs.next_tag }}
+      version:     ${{ steps.bump.outputs.version }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Get Converseen Version Number
-        id: converseen-version
-        run: | 
-          file_content=$(<package/AppImage/build/PKGBUILD)
-          VERSION=$(echo "$file_content" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
-  
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-  
-          echo "Version: $VERSION"
-        
-      - name: Create builder user
-        run: |
-          pacman -Sy --noconfirm shadow sudo base-devel
-          # useradd -m -u 1000 -s /bin/bash builder
-          useradd -m builder
-          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          chown -Rv builder:builder $GITHUB_WORKSPACE
-
-      - name: Get dependencies
-        run: |
-          cd $APPIMAGE_DIR
-          chmod +x ./get-dependencies.sh && ./get-dependencies.sh
-
-      - name: Install Custom ImageMagick
-        run: |
-          cd $APPIMAGE_DIR
-          chmod +x ./build-imagemagick.sh && ./build-imagemagick.sh
-
-      - name: Build Converseen
-        run: |
-          cd $APPIMAGE_DIR/build
-          sed -i 's|git+\$url.git#tag=v\$pkgver|git+\$url.git|' PKGBUILD
-          sudo -u builder makepkg -si --noconfirm
-
-      - name: Make AppImage
-        run: |
-          cd "$APPIMAGE_DIR"
-          chmod +x ./*-appimage.sh && ./*-appimage.sh
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4.6.2
         with:
-          name: AppImage-${{ matrix.arch }}
-          path: ${{ env.APPIMAGE_DIR }}/dist
+          fetch-depth: 0   # need full history to read tags
 
-  build-linux-qt6-im6:
-    name: Converseen Linux Build (Qt6 + ImageMagick6)
-    runs-on: ubuntu-latest
+      - name: Compute next patch version
+        id: bump
+        shell: bash
+        run: |
+          # ── Find the latest semver tag (v0.0.0.0 style) ──────────────
+          CURRENT=$(git tag --list 'v*' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -t. -k1,1V -k2,2n -k3,3n -k4,4n \
+            | tail -1)
+
+          # Fall back to v0.15.1.4 if no tag exists yet
+          CURRENT=${CURRENT:-v0.15.1.4}
+          echo "Current tag: $CURRENT"
+
+          # ── Strip the leading 'v' and split ───────────────────────────
+          VER=${CURRENT#v}           # e.g. 0.15.1.4
+          MAJOR=$(echo $VER | cut -d. -f1)
+          MINOR=$(echo $VER | cut -d. -f2)
+          PATCH=$(echo $VER | cut -d. -f3)
+          BUILD=$(echo $VER | cut -d. -f4)
+
+          # ── Bump the last (build) segment ─────────────────────────────
+          NEXT_BUILD=$((BUILD + 1))
+          NEXT_VER="${MAJOR}.${MINOR}.${PATCH}.${NEXT_BUILD}"
+          NEXT_TAG="v${NEXT_VER}"
+
+          echo "Next tag: $NEXT_TAG"
+
+          # ── Export outputs ────────────────────────────────────────────
+          echo "current_tag=${CURRENT}"  >> "$GITHUB_OUTPUT"
+          echo "next_tag=${NEXT_TAG}"    >> "$GITHUB_OUTPUT"
+          echo "version=${NEXT_VER}"     >> "$GITHUB_OUTPUT"
+
+  # ─────────────────────────────────────────────
+  # 2. Build the Windows 11 / x64 installer
+  # ─────────────────────────────────────────────
+  build-windows11:
+    name: Converseen Windows 11 Build
+    needs: resolve-version
+    runs-on: windows-2022
+
+    env:
+      VERSION: ${{ needs.resolve-version.outputs.version }}
+
     steps:
       - name: Checkout Converseen
         uses: actions/checkout@v4
         with:
-          path: Converseen
+          fetch-depth: 0
 
-      - name: Install Dependencies
-        run: |
-          sudo add-apt-repository universe
-        
-          sudo apt-get update
-          sudo apt-get upgrade
-          
-          sudo apt install -y git cmake libglx-dev libgl1-mesa-dev qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-base-dev-tools qt6-l10n-tools qt6-multimedia-dev
-          sudo apt install -y libtool pkg-config build-essential libssl-dev
-          sudo apt install -y libmagick++-dev libmagickcore-dev libmagickwand-dev imagemagick
-
-      - name: Build Converseen
-        run: |
-          cd Converseen
-          
-          mkdir build
-          cd build
-
-          cmake .. -DUSE_QT6=yes
-          make
-
-  snap-build:
-    name: Converseen Snap Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft
+      - name: Install Qt 6.10
+        uses: jurplel/install-qt-action@v4
         with:
-          path: package/Snap
+          version: "6.10.1"
+          host: "windows"
+          target: "desktop"
+          arch: "win64_msvc2022_64"
+          install-deps: "true"
+          set-env: "true"
 
-  build-windows:
-    name: Converseen Windows Build
-    runs-on: windows-2022
-    strategy:
-      matrix:
-        include:
-          - qt_version: '5.15.2'
-            qt_arch: 'win32_msvc2019'
-            imagemagick_arch: 'x86'
-            vs_arch: 'x86'
-            bits: '32bit'
-            cmake_extra_flags: '-DOpenSSL_Win32_Path="..\..\openssl-1.1\x86\bin"'
-          - qt_version: '6.10.1'
-            qt_arch: 'win64_msvc2022_64'
-            imagemagick_arch: 'x64'
-            vs_arch: 'x64'
-            bits: '64bit'
-            cmake_extra_flags: '-DUSE_QT6=yes'
-    
-    steps:
-      - name: Download ImageMagick for Windows (${{ matrix.bits }})
+      - name: Download and Install ImageMagick
         shell: powershell
         run: |
-          # Get latest version number from GitHub
           $gitTags = git ls-remote --sort="version:refname" --tags https://github.com/ImageMagick/ImageMagick.git
           $lastTagLine = $gitTags[-1]
           $lastTagVersion = $lastTagLine -replace '.*?(\d+\.\d+\.\d+-\d+).*', '$1'
-          $latestVersionNumber = $lastTagVersion
-          
-          Write-Host "Latest ImageMagick Version Found: $latestVersionNumber"
 
-          Invoke-WebRequest -Uri "https://imagemagick.org/archive/binaries/ImageMagick-$latestVersionNumber-Q16-HDRI-${{ matrix.imagemagick_arch }}-dll.exe" -OutFile ImageMagick-Installer.exe
-      
-      - name: Install ImageMagick for Windows (${{ matrix.bits }})
+          Write-Host "Installing ImageMagick $lastTagVersion..."
+          Invoke-WebRequest `
+            -Uri "https://imagemagick.org/archive/binaries/ImageMagick-$lastTagVersion-Q16-HDRI-x64-dll.exe" `
+            -OutFile "ImageMagick-Installer.exe"
+          .\ImageMagick-Installer.exe /MERGETASKS=install_devel /VERYSILENT /DIR=ImageMagick
+          Remove-Item "ImageMagick-Installer.exe"
+
+      - name: Build Converseen
         shell: cmd
         run: |
-          ImageMagick-Installer.exe /MERGETASKS=install_devel /VERYSILENT /DIR=ImageMagick
-    
-      - name: Checkout Converseen
-        uses: actions/checkout@v4
-        with:
-          path: Converseen
-      
-      - name: Install Qt ${{ matrix.qt_version }} (${{ matrix.bits }})
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '${{ matrix.qt_version }}'
-          host: 'windows'
-          target: 'desktop'
-          arch: '${{ matrix.qt_arch }}'
-          install-deps: 'true'
-          set-env: 'true'
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64
 
-      - name: Download OpenSSL (32 bit only)
-        shell: powershell
-        if: matrix.vs_arch == 'x86'
-        run: |
-          Invoke-WebRequest -Uri "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-1.1.1w.zip" -OutFile "openssl-1.1.1w.zip"
-          Expand-Archive -Path "openssl-1.1.1w.zip" -DestinationPath . -Force
-          
-      - name: Build Converseen (Qt ${{ matrix.qt_version }} ${{ matrix.bits }})
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.vs_arch }}
-          
-          cd Converseen
           mkdir build
           cd build
-      
-          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE:STRING=Release -DImageMagick_EXECUTABLE_DIR="${{ github.workspace }}\ImageMagick" ${{ matrix.cmake_extra_flags }} ..
+
+          cmake -G "NMake Makefiles" ^
+            -DCMAKE_BUILD_TYPE:STRING=Release ^
+            -DUSE_QT6=yes ^
+            -DImageMagick_EXECUTABLE_DIR="${{ github.workspace }}\ImageMagick" ^
+            ..
+
           nmake
           cpack -B package
-      
-      - name: Prepare Artifacts (Qt ${{ matrix.qt_version }} ${{ matrix.bits }})
-        shell: cmd
-        run: |       
-          mkdir artifacts-qt${{ matrix.qt_version }}-${{ matrix.bits }}
-          cp Converseen/build/package/*.msi artifacts-qt${{ matrix.qt_version }}-${{ matrix.bits }}/
-          cp Converseen/build/package/*.zip artifacts-qt${{ matrix.qt_version }}-${{ matrix.bits }}/
-      
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Windows-Qt${{ matrix.qt_version }}-${{ matrix.bits }}
-          path: 'artifacts-qt${{ matrix.qt_version }}-${{ matrix.bits }}'
 
-  build-macos:
-    name: Converseen macOS Build
-    runs-on: macos-14
+      - name: Prepare Release Assets
+        shell: powershell
+        run: |
+          $version = "${{ env.VERSION }}"
+          mkdir release
+          Copy-Item build/package/*.msi "release/Converseen-$version-x64.msi"
+          Copy-Item build/package/*.zip "release/Converseen-$version-x64.zip"
+          Get-ChildItem release/
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Converseen-Windows11-x64-${{ env.VERSION }}
+          path: release/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # 3. Tag + Release  (runs only after a
+  #    successful build, never on tag pushes to
+  #    avoid infinite loops)
+  # ─────────────────────────────────────────────
+  tag-and-release:
+    name: Create Tag & GitHub Release
+    needs: [resolve-version, build-windows11]
+    runs-on: ubuntu-latest
+    # Only tag when triggered by a branch push/manual run,
+    # NOT when the trigger was itself a tag push (avoids loops).
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
     env:
-      BASE_DIR: ${{ github.workspace }}/im_build 
-      WORKING_DIR: ${{ github.workspace }}
+      NEXT_TAG: ${{ needs.resolve-version.outputs.next_tag }}
+      VERSION:  ${{ needs.resolve-version.outputs.version }}
 
     steps:
-    - name: Install dependencies
-      run: |
-        set -e
-        
-        export HOMEBREW_NO_AUTO_UPDATE=1
-        brew install pkg-config freetype jpeg-turbo libheif libpng libtiff libtool libzip openexr openjpeg webp libraw ghostscript
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Checkout Converseen
-      uses: actions/checkout@v4
-      with:
-        path: Converseen
+      - name: Download built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Converseen-Windows11-x64-${{ env.VERSION }}
+          path: release/
 
-    - name: Set Environment
-      id: set-env
-      run: |
-        file_content=$(tr -d '\r' <converseen/package/macOS/version.txt)
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        VERSION=$(echo "$file_content" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
-        BUILD=$(echo "$file_content" | grep -oE '[0-9]+$')
+      - name: Create and push new tag
+        run: |
+          echo "Tagging: $NEXT_TAG"
+          git tag "$NEXT_TAG" -m "Release $NEXT_TAG (auto-bumped by CI)"
+          git push origin "$NEXT_TAG"
 
-        export LIB_DIR="${BASE_DIR}/lib"
-        export LOCAL_LIB="/usr/local/lib"
-
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "BUILD=$BUILD" >> $GITHUB_ENV
-        echo "LIB_DIR=$LIB_DIR" >> $GITHUB_ENV
-        echo "LOCAL_LIB=$LOCAL_LIB" >> $GITHUB_ENV
-
-        echo "ver=$VERSION" >> "$GITHUB_OUTPUT"
-
-        echo "Version: $VERSION"
-        echo "Build Number: $BUILD"
-
-    - name: Download ImageMagick
-      run: |
-        wget https://imagemagick.org/archive/ImageMagick.tar.gz
-        tar -xzvf ImageMagick.tar.gz
-        
-    - name: Build ImageMagick
-      run: |
-        cd ImageMagick-*
-
-        export CFLAGS="-O2"
-        export CXXFLAGS="-O2"
-        export LDFLAGS="-Wl,-headerpad_max_install_names -Wl,-headerpad,0x2000"
-
-        # Fix openmp compile error with libraw
-        sed -i '' 's/-fopenmp//g' $(brew --prefix libraw)/lib/pkgconfig/libraw.pc
-        sed -i '' 's/-fopenmp//g' $(brew --prefix libraw)/lib/pkgconfig/libraw_r.pc
-        
-        ./configure --prefix=${{ github.workspace }}/im_build \
-                    --disable-silent-rules \
-                    --disable-dependency-tracking \
-                    --without-perl \
-                    --disable-installed \
-                    --with-quantum-depth=16 \
-                    --disable-opencl \
-                    --enable-shared \
-                    --with-freetype=yes \
-                    --with-gvc=no \
-                    --with-openjp2 \
-                    --with-openexr \
-                    --with-webp=yes \
-                    --with-heic=yes \
-                    --with-raw=yes \
-                    --with-zip=yes \
-                    --with-gslib \
-                    --with-gs-font-dir=/usr/local/share/ghostscript/fonts \
-                    --without-djvu \
-                    --without-fftw \
-                    --without-pango \
-                    --without-wmf \
-                    --without-x \
-                    --disable-openmp
-
-        make
-        make install
-
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v4
-      with:
-        aqtversion: '==3.1.*'
-        version: '6.10.*'
-        host: 'mac'
-        target: 'desktop'
-        arch: 'clang_64'
-      
-    - name: Build Converseen
-      run: |
-        cd Converseen
-        mkdir build
-        cd build
-
-        cmake \
-         -DUSE_QT6=yes \
-         -DCMAKE_BUILD_TYPE=Release \
-         -DCMAKE_PREFIX_PATH="${{ github.workspace }}/im_build" \
-         -DCMAKE_INSTALL_PREFIX=install ..
-         
-        make
-
-    - name: Deploy Converseen
-      run: |
-        cd Converseen/build
-        cmake --install .
-
-    - name: Compress Converseen
-      run: |
-        cd Converseen/build/install
-        zip -r --symlinks -9 converseen-${{ env.VERSION }}-${{ env.BUILD }}_beta_macos-x86_64.zip converseen.app
-        pwd
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ConverseenMacOSIntel
-        path: build/bin/converseen-${{ env.VERSION }}-${{ env.BUILD }}_beta_macos-x86_64.zip
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.NEXT_TAG }}
+          name: "Version ${{ env.VERSION }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true   # auto-fills changelog from commits
+          files: |
+            release/Converseen-${{ env.VERSION }}-x64.msi
+            release/Converseen-${{ env.VERSION }}-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
