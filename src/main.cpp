@@ -60,7 +60,7 @@ int main(int argc, char ** argv)
     if (theme != "none")
         app.setStyle(QStyleFactory::create(theme));
 
-    app.setDesktopFileName("net.fasterland.converseen");
+    app.setDesktopFileName("com.o9ll.converseen");
 
     QCommandLineOption winMagickPathOption({{"m", "debugMagickWindowsPath"}, "Set the default ImageMagick path on Windows (for debug purpose only!).", "C:\\MagickInstallPath"});
     QCommandLineOption importTxtListOption({{"l", "list"}, "Reads a txt file with a list of files to be imported.", "list.txt"});

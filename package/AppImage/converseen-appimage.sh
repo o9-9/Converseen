@@ -9,7 +9,7 @@ SHARUN="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/h
 
 export ADD_HOOKS="self-updater.bg.hook"
 export ICON=/usr/share/icons/hicolor/256x256/apps/converseen.png
-export DESKTOP=/usr/share/applications/net.fasterland.converseen.desktop
+export DESKTOP=/usr/share/applications/com.o9ll.converseen.desktop
 export UPINFO="gh-releases-zsync|${GITHUB_REPOSITORY%/*}|${GITHUB_REPOSITORY#*/}|latest|*$ARCH.AppImage.zsync"
 export OUTNAME=Converseen-"$VERSION"-anylinux-"$ARCH".AppImage
 
@@ -42,7 +42,7 @@ mkdir -p ./AppDir/share/applications
 mkdir -p ./AppDir/share/metainfo
 mkdir -p ./AppDir/share/kio/servicemenus
 
-cp -v /usr/share/applications/net.fasterland.converseen.desktop ./AppDir/share/applications
+cp -v /usr/share/applications/com.o9ll.converseen.desktop ./AppDir/share/applications
 cp -v /usr/share/metainfo/converseen.appdata.xml ./AppDir/share/metainfo
 cp -v /usr/share/kio/servicemenus/converseen_import.desktop ./AppDir/share/kio/servicemenus
 

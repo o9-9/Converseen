@@ -90,13 +90,13 @@ mkdir -p $BUILD_DIR/AppDir/usr/share/ghostscript/${GS_VERSION}/iccprofiles
 cp -rvf /usr/share/ghostscript/${GS_VERSION}/iccprofiles/* $BUILD_DIR/AppDir/usr/share/ghostscript/${GS_VERSION}/iccprofiles
 
 # Fix metadata directory and filename
-mv $BUILD_DIR/AppDir/usr/share/metainfo/converseen.appdata.xml $BUILD_DIR/AppDir/usr/share/metainfo/net.fasterland.converseen.appdata.xml
+mv $BUILD_DIR/AppDir/usr/share/metainfo/converseen.appdata.xml $BUILD_DIR/AppDir/usr/share/metainfo/com.o9ll.converseen.appdata.xml
 
 # Replace png16malpha with pngalpha in delegates.xml
 sed -i 's|-sDEVICE=png16malpha|-sDEVICE=pngalpha|g' $BUILD_DIR/AppDir/.config/ImageMagick/delegates.xml
 
 # Create AppImage package
-./linuxdeploy-x86_64.AppImage --appdir AppDir -i "$REPO_ROOT"/res/converseen.png -d "$REPO_ROOT"/res/net.fasterland.converseen.desktop  --plugin qt --output appimage
+./linuxdeploy-x86_64.AppImage --appdir AppDir -i "$REPO_ROOT"/res/converseen.png -d "$REPO_ROOT"/res/com.o9ll.converseen.desktop  --plugin qt --output appimage
 
 # move built AppImage back into original CWD
 mv Converseen*.AppImage "$OLD_CWD"

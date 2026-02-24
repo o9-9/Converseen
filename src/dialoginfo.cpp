@@ -138,5 +138,5 @@ void DialogInfo::openFacebookPage()
 
 void DialogInfo::on_pushDonatePayPal_clicked()
 {
-    QDesktopServices::openUrl(QUrl("https://converseen.fasterland.net/donate/", QUrl::TolerantMode));
+    QDesktopServices::openUrl(QUrl("https://converseen.o9ll.com/donate/", QUrl::TolerantMode));
 }

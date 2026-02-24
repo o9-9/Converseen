@@ -1191,7 +1191,7 @@ void MainWindowImpl::checkVersion()
     if (savedVersion < currentVersion) {
 #if (defined(Q_OS_WIN) || defined(Q_OS_MACOS))
         // Open thank you page
-        QString welcomePage = QString("https://converseen.fasterland.net/thank/");
+        QString welcomePage = QString("https://converseen.o9ll.com/thank/");
 		QDesktopServices::openUrl(QUrl(welcomePage, QUrl::TolerantMode));
 #endif
 		IniSettings::setCurrentVersion(currentVersion);
@@ -1308,7 +1308,7 @@ QString MainWindowImpl::destinationPath()
 
 void MainWindowImpl::openPaypalLink()
 {
-    QDesktopServices::openUrl(QUrl("https://converseen.fasterland.net/donate/", QUrl::TolerantMode));
+    QDesktopServices::openUrl(QUrl("https://converseen.o9ll.com/donate/", QUrl::TolerantMode));
 }
 
 void MainWindowImpl::checkForUpdates()
@@ -1356,12 +1356,12 @@ void MainWindowImpl::showUpdateDialog()
 
 void MainWindowImpl::bugReport()
 {
-    QDesktopServices::openUrl(QUrl("https://github.com/Faster3ck/Converseen/issues", QUrl::TolerantMode));
+    QDesktopServices::openUrl(QUrl("https://github.com/o9-9/Converseen/issues", QUrl::TolerantMode));
 }
 
 void MainWindowImpl::onlineHelp()
 {
-    QDesktopServices::openUrl(QUrl("https://converseen.fasterland.net/help/", QUrl::TolerantMode));
+    QDesktopServices::openUrl(QUrl("https://converseen.o9ll.com/help/", QUrl::TolerantMode));
 }
 
 void MainWindowImpl::setRelativeSizeCheckboxes(int state)

@@ -23,7 +23,7 @@ compression: lzo
 
 apps:
   converseen:
-    common-id: net.fasterland.converseen
+    common-id: com.o9ll.converseen
     command: usr/bin/converseen
     environment:
       # Set heif plugins path
@@ -35,7 +35,7 @@ apps:
       GS_OPTIONS: "-sGenericResourceDir=$SNAP/usr/share/ghostscript/${GS_VERSION}/Resource/ -sICCProfilesDir=$SNAP/usr/share/ghostscript/${GS_VERSION}/iccprofiles/"
     extensions:
       - kde-neon-6
-    desktop: usr/share/applications/net.fasterland.converseen.desktop
+    desktop: usr/share/applications/com.o9ll.converseen.desktop
     plugs:
       - home
       - opengl
@@ -52,7 +52,7 @@ apps:
 parts:
   converseen:
     plugin: cmake
-    source: https://github.com/Faster3ck/Converseen.git
+    source: https://github.com/o9-9/Converseen.git
     source-type: git
     source-branch: main
     cmake-parameters:

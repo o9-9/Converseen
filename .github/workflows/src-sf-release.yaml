@@ -46,7 +46,7 @@ jobs:
           def generateSFReadme(changelogText, version, date):
               changelogLines = '\n'.join(changelogText.splitlines()[1:])
               
-              changelog_text = f'What\'s New in Converseen {version} ({date})\n\n{changelogLines}\n\nFor more informations: http://converseen.fasterland.net/\n'
+              changelog_text = f'What\'s New in Converseen {version} ({date})\n\n{changelogLines}\n\nFor more informations: http://converseen.o9ll.com/\n'
           
               with open("README", 'w', encoding='utf8') as file:
                   file.write(changelog_text)

@@ -170,7 +170,7 @@ void DialogMultipageEditor::showGhostscriptInstallationDialog()
         );
 
     if (response == QMessageBox::Help) {
-        const QUrl helpUrl("https://converseen.fasterland.net/converseen-can-convert-pdf-as-image-files/#windows");
+        const QUrl helpUrl("https://converseen.o9ll.com/converseen-can-convert-pdf-as-image-files/#windows");
         if (!QDesktopServices::openUrl(helpUrl)) {
             qWarning() << "Failed to open help URL:" << helpUrl.toString();
         }
@@ -236,6 +236,6 @@ void DialogMultipageEditor::on_actionUncheckAll_triggered()
 
 void DialogMultipageEditor::on_actionHelp_triggered()
 {
-    QDesktopServices::openUrl(QUrl("https://converseen.fasterland.net/convert-a-pdf-into-images-with-converseen/", QUrl::TolerantMode));
+    QDesktopServices::openUrl(QUrl("https://converseen.o9ll.com/convert-a-pdf-into-images-with-converseen/", QUrl::TolerantMode));
 }
 

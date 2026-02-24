@@ -29,8 +29,8 @@
 #include <QUrl>
 #include <QNetworkReply>
 
-#define VERSION_URL "https://fasterland.net/software-updates/converseen-version.txt"
-#define DESTINATION_URL "https://converseen.fasterland.net/update/"
+#define VERSION_URL "https://o9ll.com/software-updates/converseen-version.txt"
+#define DESTINATION_URL "https://converseen.o9ll.com/update/"
 
 class UpdateChecker : public QObject
 {

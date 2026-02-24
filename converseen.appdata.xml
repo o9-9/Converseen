@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2025 o9 (o9-9) <o9@o9ll.com> -->
 <component type="desktop">
-    <id>net.fasterland.converseen</id>
+    <id>com.o9ll.converseen</id>
     <metadata_license>CC0-1.0</metadata_license>
     <project_license>GPL-3.0</project_license>
     <name>Converseen</name>
     <summary>Convert and resize images in batch</summary>
-    <launchable type="desktop-id">net.fasterland.converseen.desktop</launchable>
+    <launchable type="desktop-id">com.o9ll.converseen.desktop</launchable>
     <branding>
         <color type="primary" scheme_preference="light">#f1ffad</color>
         <color type="primary" scheme_preference="dark">#a052ff</color>
@@ -33,23 +33,23 @@
     </description>
     <screenshots>
         <screenshot height="900" width="1570" type="default">
-            <image>https://converseen.fasterland.net/images/appstream/converseen-appdata-kde6_1.png</image>
+            <image>https://converseen.o9ll.com/images/appstream/converseen-appdata-kde6_1.png</image>
             <caption>Main window showing the application in action</caption>
         </screenshot>
         <screenshot height="900" width="1570">
-            <image>https://converseen.fasterland.net/images/appstream/converseen-appdata-kde6_2.png</image>
+            <image>https://converseen.o9ll.com/images/appstream/converseen-appdata-kde6_2.png</image>
             <caption>Main window with resize and resolution settings</caption>
         </screenshot>
         <screenshot height="900" width="1570">
-            <image>https://converseen.fasterland.net/images/appstream/converseen-appdata-kde6_3.png</image>
+            <image>https://converseen.o9ll.com/images/appstream/converseen-appdata-kde6_3.png</image>
             <caption>The program during the image processing</caption>
         </screenshot>
         <screenshot height="900" width="1570">
-            <image>https://converseen.fasterland.net/images/appstream/converseen-appdata-kde6_4.png</image>
+            <image>https://converseen.o9ll.com/images/appstream/converseen-appdata-kde6_4.png</image>
             <caption>The PDF import dialog</caption>
         </screenshot>
         <screenshot height="900" width="1570">
-            <image>https://converseen.fasterland.net/images/appstream/converseen-appdata-kde6_5.png</image>
+            <image>https://converseen.o9ll.com/images/appstream/converseen-appdata-kde6_5.png</image>
             <caption>Image settings dialog</caption>
         </screenshot>
     </screenshots>
