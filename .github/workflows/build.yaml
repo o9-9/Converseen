@@ -326,3 +326,13 @@ jobs:
       with:
         name: ConverseenMacOSIntel
         path: build/bin/converseen-${{ env.VERSION }}-${{ env.BUILD }}_beta_macos-x86_64.zip
+
+    - name: Create Tag and Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.get-version.outputs.version }}
+        name: Converseen v${{ steps.get-version.outputs.version }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        files: release-artifacts/**/*
