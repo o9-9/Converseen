@@ -52,7 +52,8 @@ jobs:
           Write-Host "Installing ImageMagick $lastTagVersion..."
           Invoke-WebRequest -Uri "https://imagemagick.org/archive/binaries/ImageMagick-$lastTagVersion-Q16-HDRI-x64-dll.exe" -OutFile "ImageMagick-Installer.exe"
           .\ImageMagick-Installer.exe /MERGETASKS=install_devel /VERYSILENT /DIR=ImageMagick
-          Remove-Item "ImageMagick-Installer.exe"
+          Start-Sleep -Seconds 2
+          Remove-Item "ImageMagick-Installer.exe" -Force -ErrorAction SilentlyContinue
 
       - name: Build Converseen
         shell: cmd
