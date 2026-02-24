@@ -1,9 +1,3 @@
-#############################################
-#
-# The Windows version of Converseen is now built using AppVeyor
-#
-#############################################
-
 name: Build and Release Converseen for Windows
 
 on:
@@ -206,53 +200,3 @@ jobs:
           artifacts/Converseen-*-win32-setup.exe
           artifacts/converseen-*.zip
 
-  sf-release:
-    name: Sourceforge Release
-    needs:
-      - build-converseen
-    runs-on: ubuntu-latest
-  
-    steps:
-      - name: Known Hosts
-        id: known-hosts
-        run: |
-          SF_HOSTS=$(ssh-keyscan -H frs.sourceforge.net)
-          echo "known-hosts=$SF_HOSTS" >> $GITHUB_OUTPUT
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: Converseen-Win32
-          path: artifacts
-        
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SF_SSH_KEY }}
-          known_hosts: ${{ steps.known-hosts.outputs.known-hosts }}
-          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-          
-      - name: rsync over SSH
-        id: rsync
-        run: |
-          cd artifacts
-        
-          c_ver=${{ needs.build-converseen.outputs.output_version }}
-          v_dir=$(echo "$c_ver" | grep -oE '^[0-9]+\.[0-9]+')
-          
-          c_target=$(echo $(ls Converseen-*-win32-setup.exe))
-          echo "target-file=$c_target" >> $GITHUB_OUTPUT
-          
-          rsync -r Converseen-*-win32-setup.exe converseen-*.zip ${{ secrets.SF_USERHOST }}:"${{ secrets.SF_PATH }}/Converseen $v_dir/"
-
-      - name: Set Platform
-        run: |
-          c_ver=${{ needs.build-converseen.outputs.output_version }}
-          c_target=${{ steps.rsync.outputs.target-file }}
-          
-          v_dir=$(echo "$c_ver" | grep -oE '^[0-9]+\.[0-9]+')
-          c_url=https://sourceforge.net/projects/converseen/files/Converseen/Converseen%20${v_dir}/$c_target
-
-          echo "url: $c_url"
-          
-          curl -H "Accept: application/json" -X PUT -d "default=windows" -d "api_key=${{ secrets.SF_API_KEY }}" $c_url
